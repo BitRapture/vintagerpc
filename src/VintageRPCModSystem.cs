@@ -40,7 +40,7 @@ namespace VintageRPC.src
             api.World.RegisterGameTickListener(UpdateActivity, activityTickTime);
             rpcCallbackListener = api.World.RegisterGameTickListener(rpc.TickCallbacks, VintageRPC.CallbackTickTime);
             rpcTickListener = api.World.RegisterGameTickListener(rpc.TickRPC, VintageRPC.RPCTickTime);
-            api.Event.LeftWorld += DisposeRPC;
+            api.Event.LeaveWorld += DisposeRPC;
         }
 
         void DisposeRPC()
