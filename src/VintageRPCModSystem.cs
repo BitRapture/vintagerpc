@@ -24,6 +24,7 @@ namespace VintageRPC.src
 
         long rpcCallbackListener;
         long rpcTickListener;
+        long activityListener;
 
         public override void StartClientSide(ICoreClientAPI api)
         {
@@ -31,7 +32,7 @@ namespace VintageRPC.src
 
             clientAPI = api;
 
-            api.World.RegisterGameTickListener(_ => activity.UpdateActivity(rpc, api), VintageRPCActivity.ActivityTickTime);
+            activityListener = api.World.RegisterGameTickListener(_ => activity.UpdateActivity(rpc, api), VintageRPCActivity.ActivityTickTime);
             rpcCallbackListener = api.World.RegisterGameTickListener(_ => rpc.TickCallbacks(), VintageRPC.CallbackTickTime);
             rpcTickListener = api.World.RegisterGameTickListener(_ => rpc.TickRPC(), VintageRPC.RPCTickTime);
             
@@ -40,6 +41,7 @@ namespace VintageRPC.src
 
         void DisposeRPC()
         {
+            clientAPI.World.UnregisterCallback(activityListener);
             clientAPI.World.UnregisterCallback(rpcCallbackListener);
             clientAPI.World.UnregisterCallback(rpcTickListener);
             rpc.Dispose();
