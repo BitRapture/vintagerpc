@@ -1,0 +1,16 @@
+{
+  "type": "code",
+  "name": "VintageRPC",
+  "modid": "vintagerpc",
+  "version": "1.0.0",
+
+  "description": "Discord Rich Presence in Vintage Story",
+  "authors": [ "BitRapture" ],
+
+  "side": "client",
+  "requiredOnClient": false,
+  "requiredOnServer": false,
+  "dependencies": {
+    "game": "1.18.8"
+  }
+}
