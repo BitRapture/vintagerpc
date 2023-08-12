@@ -31,7 +31,7 @@ namespace VintageRPC.src
         Discord.Result lastResult;
         Discord.Result instanceResult;
 
-        public void TickCallbacks(float time = 0.0f)
+        public void TickCallbacks()
         {
             if (IsRPCInstantiated)
             {
@@ -42,7 +42,7 @@ namespace VintageRPC.src
             }
         }
 
-        public void TickRPC(float time = 0.0f)
+        public void TickRPC()
         {
             if (IsRPCInstantiated)
                 discordRPC.GetActivityManager().UpdateActivity(activityData, result => result = lastResult);
