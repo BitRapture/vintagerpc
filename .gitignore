@@ -18,7 +18,7 @@
 *.userprefs
 
 # Discord SDK Libs
-DiscordSDKdlls/
+libs/DiscordSDKdlls/
 
 # Mono auto generated files
 mono_crash.*
