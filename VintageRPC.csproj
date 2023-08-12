@@ -1,0 +1,84 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <AssemblyTitle>VintageRPC</AssemblyTitle>
+    <Authors>BitRapture</Authors>
+    <Version>1.0.0</Version>
+    <Description>Discord Rich Presence in Vintage Story</Description>
+    
+    <TargetFramework>net7.0</TargetFramework>
+    <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
+    <PlatformTarget>AnyCPU</PlatformTarget>
+    <Configurations>Debug;Release;Release_Linux;Debug_Linux</Configurations>
+    <Platforms>AnyCPU;x64;x86</Platforms>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release_Linux|AnyCPU'">
+    <DefineConstants>$(DefineConstants);PLATFORM_LINUX</DefineConstants>
+    <DebugType>embedded</DebugType>
+    <Optimize>True</Optimize>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release_Linux|x86'">
+    <DefineConstants>$(DefineConstants);PLATFORM_LINUX</DefineConstants>
+    <DebugType>embedded</DebugType>
+    <Optimize>True</Optimize>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release_Linux|x64'">
+    <DefineConstants>$(DefineConstants);PLATFORM_LINUX</DefineConstants>
+    <DebugType>embedded</DebugType>
+    <Optimize>True</Optimize>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug_Linux|AnyCPU'">
+    <DefineConstants>$(DefineConstants);PLATFORM_LINUX</DefineConstants>
+    <DebugType>embedded</DebugType>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug_Linux|x86'">
+    <DefineConstants>$(DefineConstants);PLATFORM_LINUX</DefineConstants>
+    <DebugType>embedded</DebugType>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug_Linux|x64'">
+    <DefineConstants>$(DefineConstants);PLATFORM_LINUX</DefineConstants>
+    <DebugType>embedded</DebugType>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
+    <DebugType>embedded</DebugType>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <DebugType>embedded</DebugType>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x86'">
+    <DebugType>embedded</DebugType>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU'">
+    <DebugType>embedded</DebugType>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <DebugType>embedded</DebugType>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x86'">
+    <DebugType>embedded</DebugType>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Reference Include="VintagestoryAPI">
+      <HintPath>$(VINTAGE_STORY)/VintagestoryAPI.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+  </ItemGroup>
+
+  <Target Name="PostBuild" AfterTargets="PostBuildEvent">
+    <Exec Command="set &quot;dllName=discord_game_sdk&quot;&#xD;&#xA;if not exist &quot;$(TargetDir).rpc&quot; mkdir &quot;$(TargetDir).rpc&quot;&#xD;&#xA;&#xD;&#xA;if &quot;$(ConfigurationName)&quot;==&quot;Release&quot; if &quot;$(Platform)&quot;==&quot;x64&quot; goto ReleaseWinx64&#xD;&#xA;if &quot;$(ConfigurationName)&quot;==&quot;Release&quot; if &quot;$(Platform)&quot;==&quot;x86&quot; goto ReleaseWinx86&#xD;&#xA;if &quot;$(ConfigurationName)&quot;==&quot;Release_Linux&quot; if &quot;$(Platform)&quot;==&quot;x64&quot; goto ReleaseLinux64&#xD;&#xA;if &quot;$(ConfigurationName)&quot;==&quot;Release_Linux&quot; if &quot;$(Platform)&quot;==&quot;x86&quot; goto ReleaseLinux86&#xD;&#xA;&#xD;&#xA;goto Finish&#xD;&#xA;&#xD;&#xA;:ReleaseWinx64&#xD;&#xA;copy /Y &quot;$(SolutionDir)libs\DiscordSDKdlls\x86_64\%25dllName%25.dll&quot; &quot;$(TargetDir).rpc\%25dllName%25.dll&quot;&#xD;&#xA;goto Finish&#xD;&#xA;&#xD;&#xA;:ReleaseWinx86&#xD;&#xA;copy /Y &quot;$(SolutionDir)libs\DiscordSDKdlls\x86\%25dllName%25.dll&quot; &quot;$(TargetDir).rpc\%25dllName%25.dll&quot;&#xD;&#xA;goto Finish&#xD;&#xA;&#xD;&#xA;:ReleaseLinux64&#xD;&#xA;copy /Y &quot;$(SolutionDir)libs\DiscordSDKdlls\x86_64\%25dllName%25.dylib&quot; &quot;$(TargetDir).rpc\%25dllName%25.dylib&quot;&#xD;&#xA;goto Finish&#xD;&#xA;&#xD;&#xA;:ReleaseLinux86&#xD;&#xA;goto Finish&#xD;&#xA;&#xD;&#xA;:Finish&#xD;&#xA;copy /Y &quot;$(SolutionDir)libs\modInfo.json&quot; &quot;$(TargetDir).rpc\modInfo.json&quot;" />
+  </Target>
+
+</Project>
