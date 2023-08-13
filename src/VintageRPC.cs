@@ -1,17 +1,26 @@
 ﻿using System;
 using System.Linq;
 using System.Text;
+using Vintagestory.API.Client;
 
 namespace VintageRPC.src
 {
-    internal class VintageRPC
+    internal class VintageRPC : IRenderer
     {
-        public const int RPCTickTime = 6000;
-        public const int CallbackTickTime = 1000;
+        public const int RPCTickTime = 10000;
         public const string GameName = "Vintage Story";
 
         public bool IsRPCInstantiated => instanceResult == Discord.Result.Ok;
         public int StatusCount => miniStatus.Length - 1;
+
+        public int RenderRange
+        {
+            get { return 1; }
+        }
+        public double RenderOrder
+        {
+            get { return 0.0; }
+        }
 
         public string ActivityDetails
         {
@@ -70,6 +79,11 @@ namespace VintageRPC.src
         {
             discordRPC = new Discord.Discord(activityData.ApplicationId, (ulong)Discord.CreateFlags.NoRequireDiscord);
             instanceResult = discordRPC.InstanceResult;
+        }
+
+        public void OnRenderFrame(float deltaTime, EnumRenderStage stage)
+        {
+            TickCallbacks();
         }
 
         byte[] EncodeUTF8(string text)

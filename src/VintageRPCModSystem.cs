@@ -22,7 +22,6 @@ namespace VintageRPC.src
         VintageRPC rpc;
         VintageRPCActivity activity;
 
-        long rpcCallbackListener;
         long rpcTickListener;
         long activityListener;
 
@@ -32,8 +31,9 @@ namespace VintageRPC.src
 
             clientAPI = api;
 
+            api.Event.RegisterRenderer(rpc, EnumRenderStage.Before);
+
             activityListener = api.World.RegisterGameTickListener(_ => activity.UpdateActivity(rpc, api), VintageRPCActivity.ActivityTickTime);
-            rpcCallbackListener = api.World.RegisterGameTickListener(_ => rpc.TickCallbacks(), VintageRPC.CallbackTickTime);
             rpcTickListener = api.World.RegisterGameTickListener(_ => rpc.TickRPC(), VintageRPC.RPCTickTime);
             
             api.Event.LeaveWorld += DisposeRPC;
@@ -42,8 +42,13 @@ namespace VintageRPC.src
         void DisposeRPC()
         {
             clientAPI.World.UnregisterCallback(activityListener);
-            clientAPI.World.UnregisterCallback(rpcCallbackListener);
             clientAPI.World.UnregisterCallback(rpcTickListener);
+            rpc.Dispose();
+        }
+
+        public override void Dispose()
+        {
+            base.Dispose();
             rpc.Dispose();
         }
 
