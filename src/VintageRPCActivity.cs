@@ -6,6 +6,12 @@ namespace VintageRPC.src
     internal class VintageRPCActivity
     {
         public const int ActivityTickTime = 5500;
+        public string DefaultSmallImage { get; private set; }
+        public string DefaultLargeImage { get; private set; }
+        public string ActivityName { get; private set; }
+        public int SmallImages => smallImageStates.Length - 1;
+
+        string[] smallImageStates;
 
         string[] unicodeMoonPhases;
         string[] unicodeSeasons;
@@ -13,44 +19,27 @@ namespace VintageRPC.src
         string unicodeDeaths;
         string unicodeCalendar;
 
-        public void UpdateActivity(VintageRPC rpc, ICoreClientAPI clientAPI)
-        {
-            if (rpc == null || !clientAPI.PlayerReadyFired)
-                return;
-
-            if (!rpc.IsRPCInstantiated)
-            {
-                rpc.InstantiateRPC();
-                if (!rpc.IsRPCInstantiated)
-                    return;
-            }
-
-            SetPlayerWorldActivityDetails(rpc, clientAPI);
-            SetPlayerWorldActivityState(rpc, clientAPI);
-            SetPlayerActivityState(rpc, clientAPI);
-        }
-
-        void SetPlayerActivityState(VintageRPC rpc, ICoreClientAPI clientAPI)
+        public (string, string) GetPlayerActivityState(ICoreClientAPI clientAPI)
         {
             var player = clientAPI.World.Player;
 
             var playerHealth = player.Entity.WatchedAttributes["health"] as ITreeAttribute;
             if (playerHealth == null)
-                return;
+                return ("", "");
 
             float maxHealth = playerHealth.GetFloat("maxhealth");
             float health = playerHealth.GetFloat("currenthealth");
             float healthT = float.Clamp((health / maxHealth) - 0.2f, 0.0f, 1.0f);
-            int healthState = (int)float.Ceiling(rpc.StatusCount * healthT);
+            int healthState = (int)float.Ceiling(SmallImages * healthT);
             health = float.Round(health, 2);
             maxHealth = float.Round(maxHealth, 2);
 
             string playerName = player.PlayerName;
 
-            rpc.SetMiniStatus(healthState, $"{playerName} | {health}/{maxHealth} HP");
+            return (smallImageStates[healthState], $"{playerName} | {health}/{maxHealth} HP");
         }
 
-        void SetPlayerWorldActivityState(VintageRPC rpc, ICoreClientAPI clientAPI)
+        public string GetPlayerWorldActivityState(ICoreClientAPI clientAPI)
         {
             var calendar = clientAPI.World.Calendar;
 
@@ -67,15 +56,15 @@ namespace VintageRPC.src
 
             int totalDeaths = clientAPI.World.Player.WorldData.Deaths;
 
-            rpc.ActivityState = $"{timeOfDayEmoji} • {currentSeasonEmoji} • {unicodeDeaths}{totalDeaths} • {unicodeCalendar} {calendar.PrettyDate()}";
+            return $"{timeOfDayEmoji} • {currentSeasonEmoji} • {unicodeDeaths}{totalDeaths} • {unicodeCalendar} {calendar.PrettyDate()}";
         }
 
-        void SetPlayerWorldActivityDetails(VintageRPC rpc, ICoreClientAPI clientAPI)
+        public string GetPlayerWorldActivityDetails(ICoreClientAPI clientAPI)
         {
             string playerType = clientAPI.IsSinglePlayer ? "singleplayer" : "multiplayer";
             string worldType = clientAPI.World.Player.WorldData.CurrentGameMode.ToString().ToLower();
 
-            rpc.ActivityDetails = $"In a {playerType} {worldType} world";
+            return $"In a {playerType} {worldType} world";
         }
 
         public VintageRPCActivity()
@@ -93,6 +82,17 @@ namespace VintageRPC.src
             {
                 "🌱", "🌴", "🍂", "❆"
             };
+
+            smallImageStates = new string[]
+{
+                "vs_red",
+                "vs_orange",
+                "vs_green"
+            };
+            DefaultSmallImage = smallImageStates[0];
+
+            DefaultLargeImage = "vs_logo";
+            ActivityName = "Vintage Story";
         }
     }
 }
