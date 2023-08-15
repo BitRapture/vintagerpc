@@ -1,19 +1,25 @@
 ﻿using System;
 using System.Text;
-using System.Threading;
 using Vintagestory.API.Client;
 
 namespace VintageRPC.src
 {
-    internal class VintageRPC
+    internal class VintageRPC : IRenderer
     {
-        public static VintageRPC Instance {  get; private set; }
-
-        public const float RPCUpdateTime = 6.0f;
+        public const int RPCTickTime = 10000;
         public const string GameName = "Vintage Story";
 
         public bool IsRPCInstantiated => instanceResult == Discord.Result.Ok;
         public int StatusCount => miniStatus.Length - 1;
+
+        public int RenderRange
+        {
+            get { return 1; }
+        }
+        public double RenderOrder
+        {
+            get { return 0.0; }
+        }
 
         public string ActivityDetails
         {
@@ -33,14 +39,8 @@ namespace VintageRPC.src
         Discord.Result lastResult;
         Discord.Result instanceResult;
 
-        VintageRPCActivity activity;
-        Mutex mutex;
-
-        #region Using_Discord_SDK
-        public void UpdateCallbacks()
+        public void TickCallbacks()
         {
-            mutex.WaitOne();
-
             if (IsRPCInstantiated)
             {
                 discordRPC.RunCallbacks();
@@ -48,44 +48,13 @@ namespace VintageRPC.src
                 if (discordRPC.CallbacksResult != Discord.Result.Ok)
                     Dispose();
             }
-
-            mutex.ReleaseMutex();
         }
 
-        public void UpdateRPCActivity(ICoreClientAPI api)
+        public void TickRPC()
         {
-            mutex.WaitOne();
-
             if (IsRPCInstantiated)
-            {
-                activity.UpdateActivity(this, api);
                 discordRPC.GetActivityManager().UpdateActivity(activityData, result => result = lastResult);
-            }
-
-            mutex.ReleaseMutex();
         }
-
-        public void Dispose()
-        {
-            mutex.WaitOne();
-
-            if (IsRPCInstantiated)
-                discordRPC.Dispose();
-            instanceResult = Discord.Result.NotRunning;
-
-            mutex.ReleaseMutex();
-        }
-
-        public void InstantiateRPC()
-        {
-            mutex.WaitOne();
-
-            discordRPC = new Discord.Discord(activityData.ApplicationId, (ulong)Discord.CreateFlags.NoRequireDiscord);
-            instanceResult = discordRPC.InstanceResult;
-
-            mutex.ReleaseMutex();
-        }
-        #endregion
 
         public void ResetElapsedTime()
         {
@@ -98,6 +67,24 @@ namespace VintageRPC.src
             activityData.Assets.SmallText = text;
         }
 
+        public void Dispose()
+        {
+            if (IsRPCInstantiated)
+                discordRPC.Dispose();
+            instanceResult = Discord.Result.NotRunning;
+        }
+
+        public void InstantiateRPC()
+        {
+            discordRPC = new Discord.Discord(activityData.ApplicationId, (ulong)Discord.CreateFlags.NoRequireDiscord);
+            instanceResult = discordRPC.InstanceResult;
+        }
+
+        public void OnRenderFrame(float deltaTime, EnumRenderStage stage)
+        {
+            TickCallbacks();
+        }
+
         byte[] EncodeUTF8(string text)
         {
             byte[] utf8Bytes = Encoding.UTF8.GetBytes(text);
@@ -107,14 +94,14 @@ namespace VintageRPC.src
             return payload;
         }
 
-        void SetupActivityData()
+        public VintageRPC()
         {
             miniStatus = new string[]
-{
+            {
                 "vs_red",
                 "vs_orange",
                 "vs_green"
-};
+            };
 
             activityData = new Discord.Activity()
             {
@@ -127,38 +114,13 @@ namespace VintageRPC.src
             activityData.Assets.LargeImage = "vs_logo";
             activityData.Assets.LargeText = GameName;
             ResetElapsedTime();
-        }
 
-        public static void NewInstance()
-        {
-            Instance = new VintageRPC();
-        }
-
-        public static void FreeInstance()
-        {
-            Instance = null;
-        }
-
-        public VintageRPC()
-        {
-            if (Instance == null)
-            {
-                Instance = this;
-                mutex = new Mutex(true, "VintageRPCMutex");
-                activity = new VintageRPCActivity();
-                SetupActivityData();
-                InstantiateRPC();
-            }
+            InstantiateRPC();
         }
 
         ~VintageRPC()
         {
-            if (Instance == this)
-            {
-                mutex.Dispose();
-                Dispose();
-                Instance = null;
-            }
+            Dispose();
         }
     }
 }

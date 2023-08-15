@@ -1,6 +1,4 @@
-﻿using System.Diagnostics;
-using System.Threading;
-using Vintagestory.API.Client;
+﻿using Vintagestory.API.Client;
 using Vintagestory.API.Common;
 
 [assembly: ModInfo("VintageRPC", "vintagerpc",
@@ -18,48 +16,45 @@ namespace VintageRPC.src
     public class VintageRPCModSystem : ModSystem
     {
         public override bool AllowRuntimeReload => false;
-        Thread thread;
 
         ICoreClientAPI clientAPI;
+        VintageRPC rpc;
+        VintageRPCActivity activity;
+
+        long rpcTickListener;
+        long activityListener;
 
         public override void StartClientSide(ICoreClientAPI api)
         {
-            api.Event.LeaveWorld += DisposeRPC;
+            base.StartClientSide(api);
+
             clientAPI = api;
 
-            thread = new Thread(new ThreadStart(RunRPC));
-            thread.IsBackground = true;
-            thread.Start();
+            api.Event.RegisterRenderer(rpc, EnumRenderStage.Before);
 
-        }
-
-        void RunRPC()
-        {
-            VintageRPC.NewInstance();
-
-            Stopwatch stopWatch = Stopwatch.StartNew();
-            while (VintageRPC.Instance != null)
-            {
-                VintageRPC.Instance.UpdateCallbacks();
-
-                if (stopWatch.ElapsedMilliseconds / 1000.0f >= VintageRPC.RPCUpdateTime)
-                {
-                    stopWatch.Restart();
-                    VintageRPC.Instance.UpdateRPCActivity(clientAPI);
-                }
-            }
+            activityListener = api.World.RegisterGameTickListener(_ => activity.UpdateActivity(rpc, api), VintageRPCActivity.ActivityTickTime);
+            rpcTickListener = api.World.RegisterGameTickListener(_ => rpc.TickRPC(), VintageRPC.RPCTickTime);
+            
+            api.Event.LeaveWorld += DisposeRPC;
         }
 
         void DisposeRPC()
         {
-            VintageRPC.FreeInstance();
-            thread.Join();
+            clientAPI.World.UnregisterCallback(activityListener);
+            clientAPI.World.UnregisterCallback(rpcTickListener);
+            rpc.Dispose();
         }
 
-        ~VintageRPCModSystem()
+        public override void Dispose()
         {
-            if (VintageRPC.Instance != null)
-                DisposeRPC();
+            base.Dispose();
+            rpc.Dispose();
+        }
+
+        public VintageRPCModSystem()
+        {
+            rpc = new VintageRPC();
+            activity = new VintageRPCActivity();
         }
     }
 }

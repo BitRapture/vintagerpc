@@ -15,15 +15,15 @@ namespace VintageRPC.src
 
         public void UpdateActivity(VintageRPC rpc, ICoreClientAPI clientAPI)
         {
-            if (rpc == null || clientAPI == null || !clientAPI.PlayerReadyFired)
+            if (rpc == null || !clientAPI.PlayerReadyFired)
                 return;
-            
-            //if (!rpc.IsRPCInstantiated)
-            //{
-            //    rpc.InstantiateRPC();
-            //    if (!rpc.IsRPCInstantiated)
-            //        return;
-            //}
+
+            if (!rpc.IsRPCInstantiated)
+            {
+                rpc.InstantiateRPC();
+                if (!rpc.IsRPCInstantiated)
+                    return;
+            }
 
             SetPlayerWorldActivityDetails(rpc, clientAPI);
             SetPlayerWorldActivityState(rpc, clientAPI);
