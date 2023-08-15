@@ -1,121 +1,92 @@
-﻿using System;
-using System.Text;
+﻿using DiscordRPC;
+using DiscordRPC.Message;
+using System;
 using Vintagestory.API.Client;
 
 namespace VintageRPC.src
 {
-    internal class VintageRPC : IRenderer
+    internal class VintageRPC
     {
-        public const int RPCTickTime = 10000;
-        public const string GameName = "Vintage Story";
+        public const float ActivityUpdateSeconds = 6.0f;
+        public const string ClientID = "1139236686262439976";
+        public bool IsInitialized { get; private set; }
 
-        public bool IsRPCInstantiated => instanceResult == Discord.Result.Ok;
-        public int StatusCount => miniStatus.Length - 1;
+        VintageRPCActivity activityData;
+        DiscordRpcClient discordClient;
+        RichPresence richPresenceData;
 
-        public int RenderRange
-        {
-            get { return 1; }
-        }
-        public double RenderOrder
-        {
-            get { return 0.0; }
-        }
+        ICoreClientAPI clientAPI;
 
-        public string ActivityDetails
+        public void RegisterClientAPI(ICoreClientAPI api)
         {
-            get { return activityData.Details; }
-            set { activityData.Details = value; }
-        }
-        public string ActivityState
-        {
-            get { return activityData.State.ToString(); }
-            set { activityData.State = EncodeUTF8(value); }
+            clientAPI = api;
+
+            api.Event.RegisterGameTickListener(_ => SetActivity(), 50);
+            api.Event.LeaveWorld += Reset;
         }
 
-        string[] miniStatus;
-
-        Discord.Discord discordRPC;
-        Discord.Activity activityData;
-        Discord.Result lastResult;
-        Discord.Result instanceResult;
-
-        public void TickCallbacks()
+        public void Reset()
         {
-            if (IsRPCInstantiated)
-            {
-                discordRPC.RunCallbacks();
+            if (!IsInitialized)
+                return;
 
-                if (discordRPC.CallbacksResult != Discord.Result.Ok)
-                    Dispose();
-            }
-        }
-
-        public void TickRPC()
-        {
-            if (IsRPCInstantiated)
-                discordRPC.GetActivityManager().UpdateActivity(activityData, result => result = lastResult);
-        }
-
-        public void ResetElapsedTime()
-        {
-            activityData.Timestamps.Start = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
-        }
-
-        public void SetMiniStatus(int index, string text)
-        {
-            activityData.Assets.SmallImage = miniStatus[index];
-            activityData.Assets.SmallText = text;
+            discordClient.ClearPresence();
         }
 
         public void Dispose()
         {
-            if (IsRPCInstantiated)
-                discordRPC.Dispose();
-            instanceResult = Discord.Result.NotRunning;
+            if (!IsInitialized)
+                return;
+            discordClient.Dispose();
+            IsInitialized = false;
         }
 
-        public void InstantiateRPC()
+        void SetActivity()
         {
-            discordRPC = new Discord.Discord(activityData.ApplicationId, (ulong)Discord.CreateFlags.NoRequireDiscord);
-            instanceResult = discordRPC.InstanceResult;
+            if (!IsInitialized || !clientAPI.PlayerReadyFired)
+                return;
+
+            var playerState = activityData.GetPlayerActivityState(clientAPI);
+            richPresenceData.Assets.SmallImageKey = playerState.Item1;
+            richPresenceData.Assets.SmallImageText = playerState.Item2;
+            richPresenceData.State = activityData.GetPlayerWorldActivityState(clientAPI);
+            richPresenceData.Details = activityData.GetPlayerWorldActivityDetails(clientAPI);
+
+            discordClient.SetPresence(richPresenceData);
         }
 
-        public void OnRenderFrame(float deltaTime, EnumRenderStage stage)
+        void DiscordRPCError(object sender, ErrorMessage args)
         {
-            TickCallbacks();
+            if (clientAPI == null)
+                Console.WriteLine(args.Message);
+            else
+                clientAPI.TriggerIngameError(sender, args.Code.ToString(), args.Message);
         }
 
-        byte[] EncodeUTF8(string text)
+        void SetupDiscordRPC()
         {
-            byte[] utf8Bytes = Encoding.UTF8.GetBytes(text);
-            byte[] payload = new byte[128];
-            for (int i = 0; i < payload.Length; ++i)
-                payload[i] = i < utf8Bytes.Length ? utf8Bytes[i] : (byte)0;
-            return payload;
+            activityData = new VintageRPCActivity();
+            discordClient = new DiscordRpcClient(ClientID);
+            discordClient.OnError += DiscordRPCError;
+            IsInitialized = discordClient.Initialize();
+
+            richPresenceData = new RichPresence()
+            {
+                Timestamps = Timestamps.Now,
+                Assets = new Assets()
+                {
+                    LargeImageKey = activityData.DefaultLargeImage,
+                    LargeImageText = activityData.ActivityName
+                }
+            };
+
+            if (IsInitialized)
+                discordClient.SetPresence(richPresenceData);
         }
 
         public VintageRPC()
         {
-            miniStatus = new string[]
-            {
-                "vs_red",
-                "vs_orange",
-                "vs_green"
-            };
-
-            activityData = new Discord.Activity()
-            {
-                ApplicationId = 1139236686262439976,
-                Name = GameName,
-                Details = "",
-                State = EncodeUTF8(""),
-                Instance = false
-            };
-            activityData.Assets.LargeImage = "vs_logo";
-            activityData.Assets.LargeText = GameName;
-            ResetElapsedTime();
-
-            InstantiateRPC();
+            SetupDiscordRPC();
         }
 
         ~VintageRPC()
