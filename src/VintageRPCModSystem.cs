@@ -3,7 +3,7 @@ using Vintagestory.API.Common;
 
 [assembly: ModInfo("VintageRPC", "vintagerpc",
     Authors = new string[] {"BitRapture"},
-    Version = "1.1.0",
+    Version = "1.0.0",
     Description = "Discord Rich Presence in Vintage Story",
     Side = "Client",
     RequiredOnClient = false,
@@ -15,22 +15,46 @@ namespace VintageRPC.src
 {
     public class VintageRPCModSystem : ModSystem
     {
-        VintageRPC rpc;
+        public override bool AllowRuntimeReload => false;
 
-        public override bool ShouldLoad(EnumAppSide forSide)
-        {
-            return rpc.IsInitialized && forSide == EnumAppSide.Client;
-        }
+        ICoreClientAPI clientAPI;
+        VintageRPC rpc;
+        VintageRPCActivity activity;
+
+        long rpcTickListener;
+        long activityListener;
 
         public override void StartClientSide(ICoreClientAPI api)
         {
             base.StartClientSide(api);
-            rpc.RegisterClientAPI(api);
+
+            clientAPI = api;
+
+            api.Event.RegisterRenderer(rpc, EnumRenderStage.Before);
+
+            activityListener = api.World.RegisterGameTickListener(_ => activity.UpdateActivity(rpc, api), VintageRPCActivity.ActivityTickTime);
+            rpcTickListener = api.World.RegisterGameTickListener(_ => rpc.TickRPC(), VintageRPC.RPCTickTime);
+            
+            api.Event.LeaveWorld += DisposeRPC;
+        }
+
+        void DisposeRPC()
+        {
+            clientAPI.World.UnregisterCallback(activityListener);
+            clientAPI.World.UnregisterCallback(rpcTickListener);
+            rpc.Dispose();
+        }
+
+        public override void Dispose()
+        {
+            base.Dispose();
+            rpc.Dispose();
         }
 
         public VintageRPCModSystem()
         {
             rpc = new VintageRPC();
+            activity = new VintageRPCActivity();
         }
     }
 }
