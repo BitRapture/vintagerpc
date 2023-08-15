@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Linq;
 using System.Text;
 using Vintagestory.API.Client;
 
@@ -89,7 +88,10 @@ namespace VintageRPC.src
         byte[] EncodeUTF8(string text)
         {
             byte[] utf8Bytes = Encoding.UTF8.GetBytes(text);
-            return Enumerable.Concat(utf8Bytes, Enumerable.Repeat<byte>(0, 128 - utf8Bytes.Length)).ToArray();
+            byte[] payload = new byte[128];
+            for (int i = 0; i < payload.Length; ++i)
+                payload[i] = i < utf8Bytes.Length ? utf8Bytes[i] : (byte)0;
+            return payload;
         }
 
         public VintageRPC()

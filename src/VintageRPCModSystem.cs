@@ -1,6 +1,5 @@
 ﻿using Vintagestory.API.Client;
 using Vintagestory.API.Common;
-using Vintagestory.API.Datastructures;
 
 [assembly: ModInfo("VintageRPC", "vintagerpc",
     Authors = new string[] {"BitRapture"},
